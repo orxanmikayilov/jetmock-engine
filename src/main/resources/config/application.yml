@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: ms-mock
+  main:
+    banner-mode: off
+  jpa:
+    open-in-view: false

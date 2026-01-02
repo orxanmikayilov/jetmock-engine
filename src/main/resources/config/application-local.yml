@@ -1,0 +1,11 @@
+spring:
+  kafka:
+    producer:
+      properties:
+        acks: all
+        linger.ms: 0
+        delivery.timeout.ms: 120000
+        request.timeout.ms: 30000
+
+server:
+  port: 9091
