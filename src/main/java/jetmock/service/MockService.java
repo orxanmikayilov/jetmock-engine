@@ -46,19 +46,18 @@ public class MockService {
   AsyncFlowExecutor asyncFlowExecutor;
   PlaceholderService placeholderService;
 
-  public ResponseEntity<Object> getMockResponse(String groupName,
+  public ResponseEntity<Object> getMockResponse(String groupId,
                                                 HttpServletRequest request,
                                                 String requestBody,
                                                 Map<String, Object> headers) {
-    UUID groupId = null;
     Map<Integer, Object> context = new HashMap<>();
 
     TriggerPayload triggerPayload =
         TriggerPayload.builder().header(headers).body(ParserUtil.toMap(requestBody)).build();
 
-    String path = requestUrlService.getRequestPath(groupName, request.getRequestURI());
+    String path = requestUrlService.getRequestPath(groupId, request.getRequestURI());
     String method = request.getMethod();
-    log.info("API trigger called. group={}, method={}, path={}", groupName, method, path);
+    log.info("API trigger called. group={}, method={}, path={}", groupId, method, path);
 
     MockFlowEntity flow = findMock(groupId, method, path, triggerPayload);
 
@@ -119,18 +118,18 @@ public class MockService {
         .body(body);
   }
 
-  private MockFlowEntity findMock(UUID groupId, String method, String path,
+  private MockFlowEntity findMock(String groupId, String method, String path,
                                   TriggerPayload triggerPayload) {
     FlowMatchResult mock = findMockFlow(groupId, method, path, triggerPayload);
     return mockFlowRepository.findById(mock.getId()).orElseThrow(() ->
         new BaseException(404, "MOCK_NOT_FOUND", "Mock data not found"));
   }
 
-  private FlowMatchResult findMockFlow(UUID groupId, String method, String path,
+  private FlowMatchResult findMockFlow(String groupId, String method, String path,
                                        TriggerPayload triggerPayload) {
 
     List<FlowMatchResult> candidates = new ArrayList<>();
-    mockFlowRepository.findMatchingByMethodAndPath(groupId, method, path).ifPresent(candidates::add);
+    candidates.addAll(mockFlowRepository.findMatchingByMethodAndPath(groupId, method, path));
 
     if (CollectionUtils.isEmpty(candidates)) {
       candidates = findMatchingMockFlow(groupId, method, path);
@@ -182,7 +181,7 @@ public class MockService {
     return condition.matches(CONDITION_BLACKLIST_REGEX);
   }
 
-  private List<FlowMatchResult> findMatchingMockFlow(UUID groupId, String method,
+  private List<FlowMatchResult> findMatchingMockFlow(String groupId, String method,
                                                      String requestUrl) {
     String[] requestUrlParts = requestUrl.split(DELIMITER);
     return mockFlowRepository.findMatchingByMethod(groupId, method).stream()

@@ -22,7 +22,7 @@ public class AsyncFlowExecutor {
 
   //todo config
   @Async
-  public void runElementsAfterTrigger(UUID flowId,
+  public void runElementsAfterTrigger(String flowId,
                                       String triggerElementName,
                                       Map<Integer, Object> context) {
     MockFlowEntity flow = mockFlowRepository.findById(flowId)

@@ -93,7 +93,7 @@ public class KafkaTriggerService {
   private FlowMatchResult findMockFlow(String brokerId,
                                        String topic,
                                        TriggerPayload triggerPayload) {
-    Set<MockFlowEntity> flows = mockFlowRepository.findByKafkaTrigger(brokerId, topic);
+    List<MockFlowEntity> flows = mockFlowRepository.findByKafkaTrigger(brokerId, topic);
 
     List<FlowMatchResult> candidates = flows.stream()
         .map(this::mapToFlowMatchResult)

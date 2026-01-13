@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import java.util.UUID;
 import jetmock.dto.CreateMockRequest;
 import jetmock.dto.MockDetailResponse;
-import jetmock.service.CreateMockService;
 import jetmock.service.MockFlowService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -24,21 +23,20 @@ import org.springframework.web.bind.annotation.RestController;
 public class MockController {
 
   MockFlowService mockFlowService;
-  CreateMockService createMockService;
 
   @GetMapping("/{mockId}")
-  MockDetailResponse getByMockId(@PathVariable UUID mockId) {
+  MockDetailResponse getByMockId(@PathVariable String mockId) {
     return mockFlowService.getByMockId(mockId);
   }
 
   @DeleteMapping("/{mockId}")
-  void delete(@PathVariable UUID mockId) {
+  void delete(@PathVariable String mockId) {
     mockFlowService.delete(mockId);
   }
 
   @PutMapping("/{mockId}")
   void upsert(@PathVariable UUID mockId, @RequestBody @Valid CreateMockRequest request) {
-    createMockService.upsert(mockId, request);
+    mockFlowService.upsert(mockId, request);
   }
 
 }

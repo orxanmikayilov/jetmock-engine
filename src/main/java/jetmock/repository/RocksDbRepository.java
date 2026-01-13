@@ -10,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
+import org.rocksdb.WriteBatch;
+import org.rocksdb.WriteOptions;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -77,12 +79,10 @@ public class RocksDbRepository {
 
   public <T> List<T> findAll(String prefix, Class<T> entityClass) {
     List<T> results = new ArrayList<>();
-    String prefixStr = prefix + ":";
-    byte[] prefixBytes = prefixStr.getBytes();
 
     try (RocksIterator iterator = db.newIterator()) {
-      for (iterator.seek(prefixBytes);
-           iterator.isValid() && new String(iterator.key()).startsWith(prefixStr);
+      for (iterator.seek(prefix.getBytes());
+           iterator.isValid() && new String(iterator.key()).startsWith(prefix);
            iterator.next()) {
 
         results.add(objectMapper.readValue(iterator.value(), entityClass));
@@ -110,6 +110,32 @@ public class RocksDbRepository {
       db.delete(key.getBytes());
     } catch (RocksDBException e) {
       log.error("RocksDB delete error for key: {}", key, e);
+      throw new RuntimeException("RocksDB delete error", e);
+    }
+  }
+
+  public int deleteByPrefix(String prefix) {
+    byte[] prefixBytes = prefix.getBytes();
+
+    try (RocksIterator it = db.newIterator();
+         WriteBatch batch = new WriteBatch();
+         WriteOptions options = new WriteOptions()) {
+
+      int deleted = 0;
+
+      for (it.seek(prefixBytes);
+           it.isValid() && new String(it.key()).startsWith(prefix);
+           it.next()) {
+
+        batch.delete(it.key());
+        deleted++;
+      }
+
+      if (deleted > 0) db.write(options, batch);
+      return deleted;
+
+    } catch (Exception e) {
+      log.error("RocksDB deleteByPrefix error for prefix: {}", prefix, e);
       throw new RuntimeException("RocksDB delete error", e);
     }
   }

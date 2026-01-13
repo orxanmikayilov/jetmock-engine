@@ -17,13 +17,13 @@ public class DynamicMockController {
 
   private final MockService mockService;
 
-  @RequestMapping(path = "/{groupName:^(?!swagger-ui|v3|api-docs).+}/**")
-  public ResponseEntity<Object> getMockResponse(@PathVariable String groupName,
+  @RequestMapping(path = "/{groupId:^(?!swagger-ui|v3|api-docs).+}/**")
+  public ResponseEntity<Object> getMockResponse(@PathVariable String groupId,
                                                 HttpServletRequest request,
                                                 @RequestHeader Map<String, Object> headers,
                                                 @RequestBody(required = false)
                                                 String requestBody) {
-    return mockService.getMockResponse(groupName, request, requestBody, headers);
+    return mockService.getMockResponse(groupId, request, requestBody, headers);
   }
 
 }

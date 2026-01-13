@@ -16,9 +16,8 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class MockFlowEntity {
 
-  UUID id;
-  String name;
-  UUID groupId;
+  String id;
+  String groupId;
   List<FlowElement> flowElements;
 
 }

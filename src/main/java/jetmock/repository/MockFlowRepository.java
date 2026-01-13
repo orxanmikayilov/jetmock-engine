@@ -3,9 +3,7 @@ package jetmock.repository;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import jetmock.entity.FlowElement;
 import jetmock.entity.FlowMatchResult;
 import jetmock.entity.MockFlowEntity;
@@ -18,70 +16,73 @@ public class MockFlowRepository {
 
   private final RocksDbRepository commonRepository;
 
-
   private static final String FLOW_PREFIX = "flow:%s";
-  private static final String GROUP_METHOD_PATH_KEY = "match:group:%s:method:%s:path:%s";
-  private static final String GROUP_METHOD_KEY = "match:group:%s:method:%s";
-  private static final String KAFKA_TRIGGER_KEY = "kafka:broker:%s:topic:%s";
+  private static final String GROUP_METHOD_PATH_KEY = "static_api_match:group:%s:method:%s:path:%s:flow:%s";
+  private static final String GROUP_METHOD_PATH_SEARCH_KEY = "static_api_match:group:%s:method:%s:path:%s:";
+  private static final String GROUP_METHOD_KEY = "dynamic_api_match:group:%s:method:%s:flow:%s";
+  private static final String GROUP_METHOD_SEARCH_KEY = "dynamic_api_match:group:%s:method:%s:";
+  private static final String KAFKA_TRIGGER_KEY = "kafka:broker:%s:topic:%s:flow:%s";
+  private static final String KAFKA_TRIGGER_SEARCH_KEY = "kafka:broker:%s:topic:%s:";
 
   public MockFlowEntity save(MockFlowEntity flow) {
-    commonRepository.save(flowKey(flow.getId()), flow);
+    String flowId = flow.getId();
+    commonRepository.save(flowKey(flowId), flow);
 
     FlowMatchResult match = buildApiMatch(flow);
     if (match.getPath() != null) {
-      commonRepository.save(matchKey(flow.getGroupId(), match.getMethod(), match.getPath()), match);
+      commonRepository.save(matchKey(flow.getGroupId(), match.getMethod(), match.getPath(), flowId),
+          match);
       if (match.getPath().contains(":")) {
-        commonRepository.save(methodKey(flow.getGroupId(), match.getMethod()), match);
+        commonRepository.save(methodKey(flow.getGroupId(), match.getMethod(), flowId), match);
       }
     }
 
     buildKafkaTrigger(flow).ifPresent(kafka ->
         commonRepository.saveToList(
-            kafkaTriggerKey(kafka.brokerUrl(), kafka.topic()), flow.getId(), UUID.class
+            kafkaTriggerKey(kafka.brokerUrl(), kafka.topic(), flowId), flowId, String.class
         )
     );
 
     return flow;
   }
 
-  public Set<MockFlowEntity> findByKafkaTrigger(String brokerId, String topic) {
-    List<UUID> flowIds = commonRepository.findListByKey(
+  public List<MockFlowEntity> findByKafkaTrigger(String brokerId, String topic) {
+    List<String> flowIds = commonRepository.findListByKey(
         kafkaTriggerKey(brokerId, topic),
-        UUID.class
+        String.class
     );
 
     return flowIds.stream()
         .map(this::findById)
         .flatMap(Optional::stream)
-        .collect(Collectors.toSet());
+        .toList();
   }
 
-  public Optional<FlowMatchResult> findMatchingByMethodAndPath(
-      UUID groupId, String method, String path) {
+  public List<FlowMatchResult> findMatchingByMethodAndPath(
+      String groupId, String method, String path) {
     String key = matchKey(groupId, method, path);
-    return commonRepository.findByKey(key, FlowMatchResult.class);
+    return commonRepository.findAll(key, FlowMatchResult.class);
   }
 
-  public Optional<FlowMatchResult> findMatchingByMethod(UUID groupId, String method) {
+  public List<FlowMatchResult> findMatchingByMethod(String groupId, String method) {
     String key = methodKey(groupId, method);
-    return commonRepository.findByKey(key, FlowMatchResult.class);
+    return commonRepository.findAll(key, FlowMatchResult.class);
   }
 
-  public Optional<MockFlowEntity> findById(UUID id) {
+  public Optional<MockFlowEntity> findById(String id) {
     return commonRepository.findByKey(flowKey(id), MockFlowEntity.class);
   }
 
 
-  public void delete(UUID id) {
+  public void delete(String id) {
     findById(id).ifPresent(flow -> {
       commonRepository.delete(flowKey(id));
 
       FlowMatchResult match = buildApiMatch(flow);
       if (match.getPath() != null) {
-        commonRepository.delete(matchKey(flow.getGroupId(), match.getMethod(), match.getPath()),
-            "");
+        commonRepository.deleteByPrefix(matchKey(flow.getGroupId(), match.getMethod(), match.getPath()));
         if (match.getPath().contains(":")) {
-          commonRepository.delete(methodKey(flow.getGroupId(), match.getMethod()), "");
+          commonRepository.deleteByPrefix(methodKey(flow.getGroupId(), match.getMethod()));
         }
       }
 
@@ -127,21 +128,32 @@ public class MockFlowRepository {
         .orElse(null);
   }
 
-  private String flowKey(UUID id) {
+  private String flowKey(String id) {
     return String.format(FLOW_PREFIX, id);
-
   }
 
-  private String matchKey(UUID groupId, String method, String path) {
-    return String.format(GROUP_METHOD_PATH_KEY, groupId, method, path);
+  private String matchKey(String groupId, String method, String path, String flowId) {
+    return String.format(GROUP_METHOD_PATH_KEY, groupId, method, path, flowId);
   }
 
-  private String methodKey(UUID groupId, String method) {
-    return String.format(GROUP_METHOD_KEY, groupId, method);
+  private String matchKey(String groupId, String method, String path) {
+    return String.format(GROUP_METHOD_PATH_SEARCH_KEY, groupId, method, path);
+  }
+
+  private String methodKey(String groupId, String method, String flowId) {
+    return String.format(GROUP_METHOD_KEY, groupId, method, flowId);
+  }
+
+  private String methodKey(String groupId, String method) {
+    return String.format(GROUP_METHOD_SEARCH_KEY, groupId, method);
+  }
+
+  private String kafkaTriggerKey(String brokerUrl, String topic, String flowId) {
+    return String.format(KAFKA_TRIGGER_KEY, brokerUrl, topic, flowId);
   }
 
   private String kafkaTriggerKey(String brokerUrl, String topic) {
-    return String.format(KAFKA_TRIGGER_KEY, brokerUrl, topic);
+    return String.format(KAFKA_TRIGGER_SEARCH_KEY, brokerUrl, topic);
   }
 
   private record KafkaTrigger(String brokerUrl, String topic) {

@@ -3,7 +3,10 @@ package jetmock.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.rocksdb.RocksDB;
@@ -52,6 +55,43 @@ public class DebugRocksService {
       }
     }
     return result;
+  }
+
+  public Map<String, Object> deleteByPrefix(String prefix) {
+    byte[] prefixBytes = bytes(prefix);
+
+    List<byte[]> keysToDelete = new ArrayList<>();
+    int scanned = 0;
+
+    try (RocksIterator it = db.newIterator()) {
+      it.seek(prefixBytes);
+
+      while (it.isValid()) {
+        String k = key(it.key());
+        if (!k.startsWith(prefix)) {
+          break;
+        }
+        scanned++;
+        keysToDelete.add(it.key()); // it.key() copy verir (RocksDB JNI), amma yenə də təhlükəsizdir
+        it.next();
+      }
+    }
+
+    int deleted = 0;
+    for (byte[] k : keysToDelete) {
+      try {
+        db.delete(k);
+        deleted++;
+      } catch (Exception e) {
+        throw new IllegalStateException("Failed to delete key=" + key(k), e);
+      }
+    }
+
+    Map<String, Object> resp = new HashMap<>();
+    resp.put("prefix", prefix);
+    resp.put("scanned", scanned);
+    resp.put("deleted", deleted);
+    return resp;
   }
 
   public JsonNode getByKey(String key) {

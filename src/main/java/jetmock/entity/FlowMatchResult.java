@@ -1,6 +1,5 @@
 package jetmock.entity;
 
-import java.util.UUID;
 import lombok.Builder;
 import lombok.Data;
 
@@ -9,7 +8,7 @@ import lombok.Data;
 public class FlowMatchResult {
 
   //common
-  UUID id;
+  String id;
   String expression;
 
   //api trigger

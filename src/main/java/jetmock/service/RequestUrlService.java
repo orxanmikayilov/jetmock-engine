@@ -44,8 +44,8 @@ public class RequestUrlService {
     return pathVariables;
   }
 
-  public String getRequestPath(String groupName, String requestUri) {
-    return requestUri.substring((DELIMITER + groupName).length());
+  public String getRequestPath(String groupId, String requestUri) {
+    return requestUri.substring((DELIMITER + groupId).length());
   }
 
 }
