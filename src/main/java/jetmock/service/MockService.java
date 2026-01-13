@@ -1,7 +1,7 @@
 package jetmock.service;
 
-import static jetmock.contant.Constant.CONDITION_BLACKLIST_REGEX;
-import static jetmock.contant.Constant.DELIMITER;
+import static jetmock.constant.Constant.CONDITION_BLACKLIST_REGEX;
+import static jetmock.constant.Constant.DELIMITER;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
@@ -14,15 +14,14 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import jetmock.domain.ElementAttribute;
-import jetmock.domain.FlowElement;
-import jetmock.domain.FlowMatchResult;
-import jetmock.domain.MockFlow;
+import jetmock.entity.ElementAttribute;
+import jetmock.entity.FlowElement;
+import jetmock.entity.FlowMatchResult;
+import jetmock.entity.MockFlowEntity;
 import jetmock.dto.payload.ApiResponsePayload;
 import jetmock.dto.payload.TriggerPayload;
 import jetmock.exception.BaseException;
-import jetmock.storage.GroupStorage;
-import jetmock.storage.MockFlowStorage;
+import jetmock.repository.MockFlowRepository;
 import jetmock.util.ParserUtil;
 import jetmock.util.ThreadUtil;
 import org.springframework.expression.Expression;
@@ -41,9 +40,8 @@ import org.springframework.util.CollectionUtils;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class MockService {
 
-  GroupStorage groupStorage;
   ElementService elementService;
-  MockFlowStorage mockFlowStorage;
+  MockFlowRepository mockFlowRepository;
   RequestUrlService requestUrlService;
   AsyncFlowExecutor asyncFlowExecutor;
   PlaceholderService placeholderService;
@@ -52,7 +50,7 @@ public class MockService {
                                                 HttpServletRequest request,
                                                 String requestBody,
                                                 Map<String, Object> headers) {
-    UUID groupId = groupStorage.findByName(groupName).orElseThrow().getId();
+    UUID groupId = null;
     Map<Integer, Object> context = new HashMap<>();
 
     TriggerPayload triggerPayload =
@@ -62,7 +60,7 @@ public class MockService {
     String method = request.getMethod();
     log.info("API trigger called. group={}, method={}, path={}", groupName, method, path);
 
-    MockFlow flow = findMock(groupId, method, path, triggerPayload);
+    MockFlowEntity flow = findMock(groupId, method, path, triggerPayload);
 
     Map<String, String> pathVariables =
         requestUrlService.extractPathVariables(getTriggerPath(flow), path);
@@ -81,7 +79,7 @@ public class MockService {
     return responseEntity;
   }
 
-  private void setTriggerContext(MockFlow flow, TriggerPayload payload,
+  private void setTriggerContext(MockFlowEntity flow, TriggerPayload payload,
                                  Map<Integer, Object> context) {
     Integer apiTriggerRequestOrder = flow.getFlowElements().stream()
         .filter(e -> e.getName().equals("API_TRIGGER_REQUEST"))
@@ -92,7 +90,7 @@ public class MockService {
     context.put(apiTriggerRequestOrder, payload);
   }
 
-  private ResponseEntity<Object> returnResponse(MockFlow flow,
+  private ResponseEntity<Object> returnResponse(MockFlowEntity flow,
                                                 Map<Integer, Object> context) {
     FlowElement flowElement = flow.getFlowElements().stream()
         .filter(e -> e.getName().equals("API_TRIGGER_RESPONSE"))
@@ -121,10 +119,10 @@ public class MockService {
         .body(body);
   }
 
-  private MockFlow findMock(UUID groupId, String method, String path,
-                            TriggerPayload triggerPayload) {
+  private MockFlowEntity findMock(UUID groupId, String method, String path,
+                                  TriggerPayload triggerPayload) {
     FlowMatchResult mock = findMockFlow(groupId, method, path, triggerPayload);
-    return mockFlowStorage.findById(mock.getId()).orElseThrow(() ->
+    return mockFlowRepository.findById(mock.getId()).orElseThrow(() ->
         new BaseException(404, "MOCK_NOT_FOUND", "Mock data not found"));
   }
 
@@ -132,7 +130,7 @@ public class MockService {
                                        TriggerPayload triggerPayload) {
 
     List<FlowMatchResult> candidates = new ArrayList<>();
-    mockFlowStorage.findMatchingByMethodAndPath(groupId, method, path).ifPresent(candidates::add);
+    mockFlowRepository.findMatchingByMethodAndPath(groupId, method, path).ifPresent(candidates::add);
 
     if (CollectionUtils.isEmpty(candidates)) {
       candidates = findMatchingMockFlow(groupId, method, path);
@@ -187,12 +185,12 @@ public class MockService {
   private List<FlowMatchResult> findMatchingMockFlow(UUID groupId, String method,
                                                      String requestUrl) {
     String[] requestUrlParts = requestUrl.split(DELIMITER);
-    return mockFlowStorage.findMatchingByMethod(groupId, method).stream()
+    return mockFlowRepository.findMatchingByMethod(groupId, method).stream()
         .filter(mock -> requestUrlService.urlMatches(mock.getPath(), requestUrlParts))
         .toList();
   }
 
-  private String getTriggerPath(MockFlow flow) {
+  private String getTriggerPath(MockFlowEntity flow) {
     return flow.getFlowElements().stream()
         .filter(e -> e.getName().equals("API_TRIGGER_REQUEST"))
         .map(e -> elementService.getAttributeValue(e, "path"))
@@ -200,7 +198,7 @@ public class MockService {
         .orElse(null);
   }
 
-  private void runElementsBeforeResponse(MockFlow flow, Map<Integer, Object> context) {
+  private void runElementsBeforeResponse(MockFlowEntity flow, Map<Integer, Object> context) {
     List<FlowElement> elements = new ArrayList<>(flow.getFlowElements());
     elements.sort(Comparator.comparing(FlowElement::getOrderNumber));
 

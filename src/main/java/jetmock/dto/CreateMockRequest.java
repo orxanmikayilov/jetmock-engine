@@ -18,8 +18,6 @@ import lombok.experimental.FieldDefaults;
 public class CreateMockRequest {
 
   @NotBlank
-  String name;
-  @NotBlank
   String groupId;
   List<Map<String, Object>> flowSteps;
 

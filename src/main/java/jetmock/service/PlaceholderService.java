@@ -8,7 +8,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import jetmock.storage.GlobalEnvironmentStorage;
+import jetmock.repository.GlobalEnvironmentRepository;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
@@ -22,7 +22,7 @@ public class PlaceholderService {
 
   private static final Pattern PATTERN = Pattern.compile("\\{\\{(.+?)}}");
   private static final ExpressionParser PARSER = new SpelExpressionParser();
-  GlobalEnvironmentStorage globalEnvironmentStorage;
+  GlobalEnvironmentRepository globalEnvironmentRepository;
 
 
   public String resolvePlaceholders(String template, Map<Integer, Object> context) {
@@ -99,8 +99,8 @@ public class PlaceholderService {
         return "";
       }
 
-      return globalEnvironmentStorage
-          .getValueByKey(key)
+      return globalEnvironmentRepository
+          .findByKey(key)
           .map(Object::toString)
           .orElse("");
 

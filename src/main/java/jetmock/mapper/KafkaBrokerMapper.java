@@ -1,7 +1,7 @@
 package jetmock.mapper;
 
 import java.util.List;
-import jetmock.domain.KafkaBroker;
+import jetmock.entity.KafkaBrokerEntity;
 import jetmock.dto.KafkaBrokerRequest;
 import jetmock.dto.KafkaBrokerResponse;
 import org.mapstruct.Mapper;
@@ -16,10 +16,10 @@ public interface KafkaBrokerMapper {
 
   KafkaBrokerMapper INSTANCE = Mappers.getMapper(KafkaBrokerMapper.class);
 
-  KafkaBroker toKafkaBroker(KafkaBrokerRequest request);
+  KafkaBrokerEntity toKafkaBroker(KafkaBrokerRequest request);
 
-  KafkaBrokerResponse toKafkaBrokerResponse(KafkaBroker broker);
+  KafkaBrokerResponse toKafkaBrokerResponse(KafkaBrokerEntity broker);
 
-  List<KafkaBrokerResponse> toKafkaBrokerResponse(List<KafkaBroker> brokers);
+  List<KafkaBrokerResponse> toKafkaBrokerResponse(List<KafkaBrokerEntity> brokers);
 
 }

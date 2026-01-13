@@ -6,16 +6,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
+import jetmock.service.kafka.KafkaPublishService;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import jetmock.domain.ElementAttribute;
-import jetmock.domain.FlowElement;
-import jetmock.domain.GlobalVariable;
+import jetmock.entity.ElementAttribute;
+import jetmock.entity.FlowElement;
+import jetmock.entity.GlobalVariableEntity;
 import jetmock.dto.payload.CallbackApiPayload;
 import jetmock.dto.payload.GlobalVariablePayload;
 import jetmock.dto.payload.KafkaPublisherPayload;
-import jetmock.storage.GlobalEnvironmentStorage;
+import jetmock.repository.GlobalEnvironmentRepository;
 import jetmock.util.ParserUtil;
 import org.springframework.stereotype.Service;
 
@@ -27,7 +28,7 @@ public class ElementService {
 
   KafkaPublishService kafkaPublishService;
   CallbackService callbackService;
-  GlobalEnvironmentStorage globalEnvironmentStorage;
+  GlobalEnvironmentRepository globalEnvironmentRepository;
   PlaceholderService placeholderService;
 
   public void executeElementAction(FlowElement fe, Map<Integer, Object> context) {
@@ -143,7 +144,7 @@ public class ElementService {
           ? valueNode.asText()
           : null;
 
-      globalEnvironmentStorage.upsert(new GlobalVariable(key, value));
+      globalEnvironmentRepository.save(new GlobalVariableEntity(key, value));
 
     }
     payload.setVariable(resolvedValue);

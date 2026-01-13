@@ -6,9 +6,9 @@ import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import jetmock.domain.FlowElement;
-import jetmock.domain.MockFlow;
-import jetmock.storage.MockFlowStorage;
+import jetmock.entity.FlowElement;
+import jetmock.entity.MockFlowEntity;
+import jetmock.repository.MockFlowRepository;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -18,14 +18,14 @@ import org.springframework.stereotype.Service;
 public class AsyncFlowExecutor {
 
   private final ElementService elementService;
-  private final MockFlowStorage mockFlowStorage;
+  private final MockFlowRepository mockFlowRepository;
 
   //todo config
   @Async
   public void runElementsAfterTrigger(UUID flowId,
                                       String triggerElementName,
                                       Map<Integer, Object> context) {
-    MockFlow flow = mockFlowStorage.findById(flowId)
+    MockFlowEntity flow = mockFlowRepository.findById(flowId)
         .orElseThrow(() -> new IllegalStateException("MockFlow not found: " + flowId));
 
     List<FlowElement> elements = flow.getFlowElements();

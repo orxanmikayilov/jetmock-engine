@@ -1,7 +1,6 @@
-package jetmock.dto;
+package jetmock.entity;
 
-import java.util.List;
-import java.util.Map;
+import jetmock.constant.NodeType;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,8 +13,10 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class MockDetailResponse {
-
-  List<Map<String, Object>> flowSteps;
+public class CollectionNodeEntity {
+  String id;
+  String name;
+  NodeType type;
+  String parentId;
 
 }

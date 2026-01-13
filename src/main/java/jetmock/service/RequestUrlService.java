@@ -1,6 +1,6 @@
 package jetmock.service;
 
-import static jetmock.contant.Constant.DELIMITER;
+import static jetmock.constant.Constant.DELIMITER;
 
 import java.util.HashMap;
 import java.util.Map;

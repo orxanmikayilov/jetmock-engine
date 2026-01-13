@@ -1,7 +1,6 @@
-package jetmock.dto;
+package jetmock.entity;
 
-import java.util.List;
-import java.util.Map;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,8 +13,10 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class MockDetailResponse {
+public class KafkaBrokerEntity {
 
-  List<Map<String, Object>> flowSteps;
+  UUID id;
+  String name;
+  String url;
 
 }

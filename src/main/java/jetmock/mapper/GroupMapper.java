@@ -1,7 +1,7 @@
 package jetmock.mapper;
 
 import java.util.List;
-import jetmock.domain.MockGroup;
+import jetmock.entity.MockGroup;
 import jetmock.dto.GroupRequest;
 import jetmock.dto.GroupResponse;
 import org.mapstruct.Mapper;

@@ -1,15 +1,11 @@
 package jetmock.controller;
 
-import static lombok.AccessLevel.PRIVATE;
-
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
 import jetmock.dto.KafkaBrokerRequest;
 import jetmock.dto.KafkaBrokerResponse;
 import jetmock.service.SettingsService;
-import org.springframework.web.bind.annotation.CrossOrigin;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,13 +15,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/settings")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
-@FieldDefaults(level = PRIVATE, makeFinal = true)
+@RequestMapping("/api/settings")
 public class SettingsController {
 
-  SettingsService settingsService;
+  private final SettingsService settingsService;
 
   @GetMapping("/kafka")
   public List<KafkaBrokerResponse> getBrokers() {

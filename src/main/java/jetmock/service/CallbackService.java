@@ -21,8 +21,6 @@ import org.springframework.web.client.RestTemplate;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class CallbackService {
 
-  PlaceholderService placeholderService;
-
   public void callbackToClient(CallbackApiPayload callbackApiPayload) {
     log.info("callback to client started: {}", callbackApiPayload);
     ThreadUtil.sleep(callbackApiPayload.getLatency());
