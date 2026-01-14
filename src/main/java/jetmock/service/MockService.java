@@ -9,21 +9,20 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
-import lombok.extern.slf4j.Slf4j;
+import jetmock.dto.payload.ApiResponsePayload;
+import jetmock.dto.payload.TriggerPayload;
 import jetmock.entity.ElementAttribute;
 import jetmock.entity.FlowElement;
 import jetmock.entity.FlowMatchResult;
 import jetmock.entity.MockFlowEntity;
-import jetmock.dto.payload.ApiResponsePayload;
-import jetmock.dto.payload.TriggerPayload;
 import jetmock.exception.BaseException;
 import jetmock.repository.MockFlowRepository;
 import jetmock.util.ParserUtil;
 import jetmock.util.ThreadUtil;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -137,10 +136,6 @@ public class MockService {
     }
     if (candidates.isEmpty()) {
       throw new BaseException(404, "MOCK_NOT_FOUND", "Mock data not found");
-    }
-
-    if (candidates.size() == 1) {
-      return candidates.get(0);
     }
 
     for (FlowMatchResult flow : candidates) {
