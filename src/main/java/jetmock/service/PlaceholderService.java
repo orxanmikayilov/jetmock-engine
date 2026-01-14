@@ -51,11 +51,6 @@ public class PlaceholderService {
       return resolveGlobal(expr);
     }
 
-    //    if (expr.startsWith("cache.")) {
-    //      return dataCache.get(expr.substring(6)).orElse("");
-    //    }
-
-    // 🔥 MAIN DSL ENTRY
     return resolveDsl(expr, context);
   }
 

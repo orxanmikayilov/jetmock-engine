@@ -16,6 +16,7 @@ import lombok.experimental.FieldDefaults;
 public class TriggerPayload {
 
   Map<String, Object> header;
+  Map<String, Object> param;
   Map<String, String> path;
   Map<String, Object> body;
 

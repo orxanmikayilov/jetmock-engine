@@ -14,12 +14,12 @@ public class GlobalEnvironmentRepository {
 
   private static final String COLLECTION_ID_KEY = "global_variable";
 
-  public Optional<GlobalVariableEntity> findByKey(String id) {
-    return commonRepository.findByKey(COLLECTION_ID_KEY, id, GlobalVariableEntity.class);
+  public Optional<Object> findByKey(String id) {
+    return commonRepository.findByKey(COLLECTION_ID_KEY, id, Object.class);
   }
 
-  public List<GlobalVariableEntity> getAll() {
-    return commonRepository.findAll(COLLECTION_ID_KEY, GlobalVariableEntity.class);
+  public List<Object> getAll() {
+    return commonRepository.findAll(COLLECTION_ID_KEY, Object.class);
   }
 
   public void saveAll(List<GlobalVariableEntity> variables) {
@@ -27,7 +27,7 @@ public class GlobalEnvironmentRepository {
   }
 
   public void save(GlobalVariableEntity variable) {
-    commonRepository.save(variable.getKey(), variable.getValue());
+    commonRepository.save(COLLECTION_ID_KEY, variable.getKey(), variable.getValue());
   }
 
 }

@@ -53,7 +53,8 @@ public class MockService {
     Map<Integer, Object> context = new HashMap<>();
 
     TriggerPayload triggerPayload =
-        TriggerPayload.builder().header(headers).body(ParserUtil.toMap(requestBody)).build();
+        TriggerPayload.builder().header(headers).body(ParserUtil.toMap(requestBody))
+            .param(extractQueryParams(request)).build();
 
     String path = requestUrlService.getRequestPath(groupId, request.getRequestURI());
     String method = request.getMethod();
@@ -208,5 +209,20 @@ public class MockService {
       elementService.executeElementAction(elements.get(i), context);
     }
   }
+
+  private Map<String, Object> extractQueryParams(HttpServletRequest request) {
+    Map<String, Object> result = new HashMap<>();
+    request.getParameterMap().forEach((k, v) -> {
+      if (v == null) {
+        result.put(k, null);
+      } else if (v.length == 1) {
+        result.put(k, v[0]);
+      } else {
+        result.put(k, List.of(v));
+      }
+    });
+    return result;
+  }
+
 
 }
