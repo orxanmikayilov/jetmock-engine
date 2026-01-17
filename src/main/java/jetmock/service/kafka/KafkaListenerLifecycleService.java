@@ -3,6 +3,7 @@ package jetmock.service.kafka;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import jetmock.constant.ElementSchema;
 import jetmock.dto.ActiveKafkaListenerDto;
 import jetmock.entity.KafkaBrokerEntity;
 import jetmock.entity.MockFlowEntity;
@@ -55,7 +56,7 @@ public class KafkaListenerLifecycleService {
 
   private Optional<TriggerInfo> extractTrigger(MockFlowEntity flow) {
     return flow.getFlowElements().stream()
-        .filter(e -> "KAFKA_TRIGGER".equals(e.getName()))
+        .filter(e -> ElementSchema.KAFKA_TRIGGER.name().equals(e.getName()))
         .findFirst()
         .map(e -> {
           String brokerId = elementService.getAttributeValue(e, "broker");

@@ -5,8 +5,8 @@ import static jetmock.constant.Constant.CONDITION_BLACKLIST_REGEX;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import jetmock.constant.ElementSchema;
 import jetmock.dto.payload.TriggerPayload;
-import jetmock.entity.FlowElement;
 import jetmock.entity.FlowMatchResult;
 import jetmock.entity.MockFlowEntity;
 import jetmock.exception.BaseException;
@@ -14,7 +14,6 @@ import jetmock.repository.MockFlowRepository;
 import jetmock.service.AsyncFlowExecutor;
 import jetmock.service.DslObject;
 import jetmock.service.DslPropertyAccessor;
-import jetmock.service.ElementService;
 import jetmock.util.ParserUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -32,12 +31,8 @@ import org.springframework.stereotype.Service;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class KafkaTriggerService {
 
-  ElementService elementService;
   MockFlowRepository mockFlowRepository;
   AsyncFlowExecutor asyncFlowExecutor;
-
-  private static final String KAFKA_TRIGGER = "KAFKA_TRIGGER";
-  private static final String CONDITION_PREFIX = "CONDITION";
 
   public void processKafkaMessage(String brokerId, String topic, String message) {
     TriggerPayload triggerPayload = buildTriggerPayload(topic, message, brokerId);
@@ -48,7 +43,7 @@ public class KafkaTriggerService {
     Map<Integer, Object> context = new HashMap<>();
     setTriggerContext(flow, triggerPayload, context);
 
-    asyncFlowExecutor.runElementsAfterTrigger(flow.getId(), KAFKA_TRIGGER,
+    asyncFlowExecutor.runElementsAfterTrigger(flow.getId(), ElementSchema.KAFKA_TRIGGER.name(),
         context);
   }
 
@@ -69,7 +64,7 @@ public class KafkaTriggerService {
                                  Map<Integer, Object> context) {
 
     Integer kafkaTriggerRequestOrder = flow.getFlowElements().stream()
-        .filter(e -> e.getName().equals(KAFKA_TRIGGER))
+        .filter(e -> e.getName().equals(ElementSchema.KAFKA_TRIGGER.name()))
         .findAny()
         .orElseThrow(() ->
             new IllegalStateException("KAFKA_TRIGGER_REQUEST element was not found in the flow"))
@@ -108,24 +103,6 @@ public class KafkaTriggerService {
         "MOCK_NOT_FOUND",
         "No mock flow matched the evaluated conditions"
     );
-  }
-
-  private FlowMatchResult mapToFlowMatchResult(MockFlowEntity flow) {
-    FlowElement conditionElement = flow.getFlowElements().stream()
-        .filter(e -> CONDITION_PREFIX.equals(e.getName()))
-        .findFirst()
-        .orElseThrow(() ->
-            new IllegalStateException(
-                "MockFlow id=" + flow.getId() + " does not contain Condition element"
-            ));
-
-    String conditionExpression =
-        elementService.getAttributeValue(conditionElement, "expression");
-
-    return FlowMatchResult.builder()
-        .id(flow.getId())
-        .expression(conditionExpression)
-        .build();
   }
 
   private boolean isConditionEligible(FlowMatchResult flow, TriggerPayload triggerPayload) {

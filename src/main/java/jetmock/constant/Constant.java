@@ -7,17 +7,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = PRIVATE)
 public class Constant {
 
-  public static final Long CACHE_TTL = 1L;
-  public static final String MOCK_CACHE_NAME = "mock_server";
-
-  public static final String RANDOM_UUID = "randomUUID";
-  public static final String REQUEST_PREFIX = "req";
-  public static final String RESPONSE_PREFIX = "resp";
-  public static final String PATH_PREFIX = "path";
-  public static final String CALLBACK_PREFIX = "callback";
-  public static final String EVENT_PREFIX = "event";
-  public static final String CACHE_PREFIX = "cache";
-  public static final String VARIABLE_SYMBOL = "$";
   public static final String DELIMITER = "/";
 
   /**

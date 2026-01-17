@@ -3,6 +3,7 @@ package jetmock.repository;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import jetmock.constant.ElementSchema;
 import jetmock.entity.FlowElement;
 import jetmock.entity.FlowMatchResult;
 import jetmock.entity.MockFlowEntity;
@@ -28,7 +29,7 @@ public class MockFlowRepository {
 
   public MockFlowEntity save(MockFlowEntity flow) {
     String flowId = flow.getId();
-    Optional<FlowElement> condition = getFlowElement(flow, "CONDITION");
+    Optional<FlowElement> condition = getFlowElement(flow, ElementSchema.CONDITION.name());
     String expression = condition.map(e -> attr(e, "expression")).orElse(null);
     FlowMatchResult flowMatch = new FlowMatchResult(flowId, expression);
     commonRepository.save(flowKey(flowId), flow);
@@ -110,7 +111,7 @@ public class MockFlowRepository {
   }
 
   private Optional<KafkaTrigger> buildKafkaTrigger(MockFlowEntity flow) {
-    Optional<FlowElement> apiTrigger = getFlowElement(flow, "KAFKA_TRIGGER");
+    Optional<FlowElement> apiTrigger = getFlowElement(flow, ElementSchema.KAFKA_TRIGGER.name());
 
     return apiTrigger.map(e -> new KafkaTrigger(attr(e, "broker"), attr(e, "topic")));
   }

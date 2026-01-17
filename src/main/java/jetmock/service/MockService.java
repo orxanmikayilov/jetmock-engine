@@ -9,6 +9,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import jetmock.constant.ElementSchema;
 import jetmock.dto.payload.ApiResponsePayload;
 import jetmock.dto.payload.TriggerPayload;
 import jetmock.entity.ElementAttribute;
@@ -72,7 +73,7 @@ public class MockService {
     ResponseEntity<Object> responseEntity = returnResponse(flow, context);
     asyncFlowExecutor.runElementsAfterTrigger(
         flow.getId(),
-        "API_TRIGGER_RESPONSE",
+        ElementSchema.API_TRIGGER_RESPONSE.name(),
         context
     );
     return responseEntity;
@@ -81,7 +82,7 @@ public class MockService {
   private void setTriggerContext(MockFlowEntity flow, TriggerPayload payload,
                                  Map<Integer, Object> context) {
     Integer apiTriggerRequestOrder = flow.getFlowElements().stream()
-        .filter(e -> e.getName().equals("API_TRIGGER_REQUEST"))
+        .filter(e -> e.getName().equals(ElementSchema.API_TRIGGER_REQUEST.name()))
         .findAny()
         .orElseThrow()
         .getOrderNumber();
@@ -92,7 +93,7 @@ public class MockService {
   private ResponseEntity<Object> returnResponse(MockFlowEntity flow,
                                                 Map<Integer, Object> context) {
     FlowElement flowElement = flow.getFlowElements().stream()
-        .filter(e -> e.getName().equals("API_TRIGGER_RESPONSE"))
+        .filter(e -> e.getName().equals(ElementSchema.API_TRIGGER_RESPONSE.name()))
         .findFirst()
         .orElseThrow();
     List<ElementAttribute> apiTriggerAttributes = flowElement.getAttributes();
@@ -188,7 +189,7 @@ public class MockService {
 
   private String getTriggerPath(MockFlowEntity flow) {
     return flow.getFlowElements().stream()
-        .filter(e -> e.getName().equals("API_TRIGGER_REQUEST"))
+        .filter(e -> e.getName().equals(ElementSchema.API_TRIGGER_REQUEST.name()))
         .map(e -> elementService.getAttributeValue(e, "path"))
         .findFirst()
         .orElse(null);
@@ -198,8 +199,8 @@ public class MockService {
     List<FlowElement> elements = new ArrayList<>(flow.getFlowElements());
     elements.sort(Comparator.comparing(FlowElement::getOrderNumber));
 
-    int start = elementService.findIndex(elements, "API_TRIGGER_REQUEST");
-    int end = elementService.findIndex(elements, "API_TRIGGER_RESPONSE");
+    int start = elementService.findIndex(elements, ElementSchema.API_TRIGGER_REQUEST.name());
+    int end = elementService.findIndex(elements, ElementSchema.API_TRIGGER_RESPONSE.name());
 
     for (int i = start + 1; i < end; i++) {
       elementService.executeElementAction(elements.get(i), context);
