@@ -1,22 +1,17 @@
 package jetmock.entity;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class FlowMatchResult {
 
-  //common
   String id;
   String expression;
-
-  //api trigger
-  String method;
-  String path;
-
-  //kafka trigger
-  String brokerId;
-  String topic;
 
 }

@@ -29,7 +29,7 @@ public class KafkaPublishService {
               404, "KAFKA_BROKER_NOT_FOUND", "Kafka broker not found: " + brokerId
           ));
       KafkaTemplate<String, String> kafkaTemplate =
-          templateFactory.getTemplate(broker.getUrl());
+          templateFactory.getTemplate(broker.getUrl().trim());
       kafkaTemplate.send(payload.getTopic(), payload.getBody());
       log.info("Publish to kafka completed");
     } catch (Exception ex) {

@@ -151,7 +151,7 @@ public class MockService {
 
     if (condition == null || condition.isBlank()) {
       log.info("condition is blank");
-      return false;
+      return true;
     }
 
     if (isCodeInjectionAttack(condition)) {
@@ -161,16 +161,17 @@ public class MockService {
 
     try {
       StandardEvaluationContext context = new StandardEvaluationContext();
-      context.setVariable("trigger", triggerPayload);
+      context.setVariable("trigger", new DslObject(triggerPayload));
+      context.addPropertyAccessor(new DslPropertyAccessor());
 
       ExpressionParser parser = new SpelExpressionParser();
       Expression exp = parser.parseExpression(condition);
       return Boolean.TRUE.equals(exp.getValue(context, Boolean.class));
 
     } catch (Exception e) {
-      log.error("Condition evaluation failed", e);
+      log.error("Condition evaluation failed. condition={}", condition, e);
+      return false;
     }
-    return false;
   }
 
   private boolean isCodeInjectionAttack(String condition) {
@@ -178,10 +179,10 @@ public class MockService {
   }
 
   private List<FlowMatchResult> findMatchingMockFlow(String groupId, String method,
-                                                     String requestUrl) {
-    String[] requestUrlParts = requestUrl.split(DELIMITER);
+                                                     String path) {
+    String[] requestUrlParts = path.split(DELIMITER);
     return mockFlowRepository.findMatchingByMethod(groupId, method).stream()
-        .filter(mock -> requestUrlService.urlMatches(mock.getPath(), requestUrlParts))
+        .filter(mock -> requestUrlService.urlMatches(path, requestUrlParts))
         .toList();
   }
 
@@ -218,6 +219,5 @@ public class MockService {
     });
     return result;
   }
-
 
 }

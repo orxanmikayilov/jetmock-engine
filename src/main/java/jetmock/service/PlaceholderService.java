@@ -4,11 +4,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import jetmock.repository.GlobalEnvironmentRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import jetmock.repository.GlobalEnvironmentRepository;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
@@ -23,7 +23,6 @@ public class PlaceholderService {
   private static final Pattern PATTERN = Pattern.compile("\\{\\{(.+?)}}");
   private static final ExpressionParser PARSER = new SpelExpressionParser();
   GlobalEnvironmentRepository globalEnvironmentRepository;
-
 
   public String resolvePlaceholders(String template, Map<Integer, Object> context) {
     if (template == null) {
@@ -104,6 +103,5 @@ public class PlaceholderService {
       return "";
     }
   }
-
 
 }

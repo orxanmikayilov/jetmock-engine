@@ -6,18 +6,18 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
-import jetmock.service.kafka.KafkaPublishService;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
-import lombok.extern.slf4j.Slf4j;
-import jetmock.entity.ElementAttribute;
-import jetmock.entity.FlowElement;
-import jetmock.entity.GlobalVariableEntity;
 import jetmock.dto.payload.CallbackApiPayload;
 import jetmock.dto.payload.GlobalVariablePayload;
 import jetmock.dto.payload.KafkaPublisherPayload;
+import jetmock.entity.ElementAttribute;
+import jetmock.entity.FlowElement;
+import jetmock.entity.GlobalVariableEntity;
 import jetmock.repository.GlobalEnvironmentRepository;
+import jetmock.service.kafka.KafkaPublishService;
 import jetmock.util.ParserUtil;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -131,7 +131,6 @@ public class ElementService {
     JsonNode jsonNode = ParserUtil.toJsonNode(resolvedValue);
 
     for (JsonNode node : jsonNode) {
-
       JsonNode keyNode = node.get("key");
       JsonNode valueNode = node.get("value");
 

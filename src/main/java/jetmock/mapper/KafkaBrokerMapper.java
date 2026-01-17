@@ -1,9 +1,9 @@
 package jetmock.mapper;
 
 import java.util.List;
-import jetmock.entity.KafkaBrokerEntity;
 import jetmock.dto.KafkaBrokerRequest;
 import jetmock.dto.KafkaBrokerResponse;
+import jetmock.entity.KafkaBrokerEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 import org.mapstruct.factory.Mappers;

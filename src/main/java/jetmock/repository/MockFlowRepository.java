@@ -3,7 +3,6 @@ package jetmock.repository;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 import jetmock.entity.FlowElement;
 import jetmock.entity.FlowMatchResult;
 import jetmock.entity.MockFlowEntity;
@@ -17,45 +16,54 @@ public class MockFlowRepository {
   private final RocksDbRepository commonRepository;
 
   private static final String FLOW_PREFIX = "flow:%s";
-  private static final String GROUP_METHOD_PATH_KEY = "static_api_match:group:%s:method:%s:path:%s:flow:%s";
-  private static final String GROUP_METHOD_PATH_SEARCH_KEY = "static_api_match:group:%s:method:%s:path:%s:";
+  private static final String GROUP_METHOD_PATH_KEY =
+      "static_api_match:group:%s:method:%s:path:%s:flow:%s";
+  private static final String GROUP_METHOD_PATH_SEARCH_KEY =
+      "static_api_match:group:%s:method:%s:path:%s:";
   private static final String GROUP_METHOD_KEY = "dynamic_api_match:group:%s:method:%s:flow:%s";
   private static final String GROUP_METHOD_SEARCH_KEY = "dynamic_api_match:group:%s:method:%s:";
   private static final String KAFKA_TRIGGER_KEY = "kafka:broker:%s:topic:%s:flow:%s";
   private static final String KAFKA_TRIGGER_SEARCH_KEY = "kafka:broker:%s:topic:%s:";
+  private static final String ALL_KAFKA_TRIGGER_SEARCH_KEY = "kafka:";
 
   public MockFlowEntity save(MockFlowEntity flow) {
     String flowId = flow.getId();
+    Optional<FlowElement> condition = getFlowElement(flow, "CONDITION");
+    String expression = condition.map(e -> attr(e, "expression")).orElse(null);
+    FlowMatchResult flowMatch = new FlowMatchResult(flowId, expression);
     commonRepository.save(flowKey(flowId), flow);
-
-    FlowMatchResult match = buildApiMatch(flow);
-    if (match.getPath() != null) {
-      commonRepository.save(matchKey(flow.getGroupId(), match.getMethod(), match.getPath(), flowId),
-          match);
-      if (match.getPath().contains(":")) {
-        commonRepository.save(methodKey(flow.getGroupId(), match.getMethod(), flowId), match);
+    ApiTrigger apiTrigger = buildApiTrigger(flow);
+    if (apiTrigger.path() != null) {
+      commonRepository.save(
+          matchKey(flow.getGroupId(), apiTrigger.method(), apiTrigger.path(), flowId),
+          flowMatch);
+      if (apiTrigger.path().contains(":")) {
+        commonRepository.save(methodKey(flow.getGroupId(), apiTrigger.method(), flowId),
+            flowMatch);
       }
     }
 
     buildKafkaTrigger(flow).ifPresent(kafka ->
-        commonRepository.saveToList(
-            kafkaTriggerKey(kafka.brokerUrl(), kafka.topic(), flowId), flowId, String.class
+        commonRepository.save(
+            kafkaTriggerKey(kafka.brokerUrl(), kafka.topic(), flowId), flowMatch
         )
     );
 
     return flow;
   }
 
-  public List<MockFlowEntity> findByKafkaTrigger(String brokerId, String topic) {
-    List<String> flowIds = commonRepository.findListByKey(
-        kafkaTriggerKey(brokerId, topic),
-        String.class
-    );
+  private static Optional<FlowElement> getFlowElement(MockFlowEntity flow, String elementName) {
+    return flow.getFlowElements().stream()
+        .filter(e -> elementName.equals(e.getName()))
+        .findFirst();
+  }
 
-    return flowIds.stream()
-        .map(this::findById)
-        .flatMap(Optional::stream)
-        .toList();
+  public List<FlowMatchResult> findByKafkaTrigger(String brokerId, String topic) {
+    return commonRepository.findAll(kafkaTriggerKey(brokerId, topic), FlowMatchResult.class);
+  }
+
+  public List<FlowMatchResult> findAllKafkaTrigger() {
+    return commonRepository.findAll(ALL_KAFKA_TRIGGER_SEARCH_KEY, FlowMatchResult.class);
   }
 
   public List<FlowMatchResult> findMatchingByMethodAndPath(
@@ -73,16 +81,15 @@ public class MockFlowRepository {
     return commonRepository.findByKey(flowKey(id), MockFlowEntity.class);
   }
 
-
   public void delete(String id) {
     findById(id).ifPresent(flow -> {
       commonRepository.delete(flowKey(id));
 
-      FlowMatchResult match = buildApiMatch(flow);
-      if (match.getPath() != null) {
-        commonRepository.deleteByPrefix(matchKey(flow.getGroupId(), match.getMethod(), match.getPath()));
-        if (match.getPath().contains(":")) {
-          commonRepository.deleteByPrefix(methodKey(flow.getGroupId(), match.getMethod()));
+      ApiTrigger match = buildApiTrigger(flow);
+      if (match.path() != null) {
+        commonRepository.deleteByPrefix(matchKey(flow.getGroupId(), match.method(), match.path()));
+        if (match.path().contains(":")) {
+          commonRepository.deleteByPrefix(methodKey(flow.getGroupId(), match.method()));
         }
       }
 
@@ -93,30 +100,19 @@ public class MockFlowRepository {
       );
     });
   }
-// ===================== INTERNAL =====================
 
-  private FlowMatchResult buildApiMatch(MockFlowEntity flow) {
-    Optional<FlowElement> apiTrigger = flow.getFlowElements().stream()
-        .filter(e -> "API_TRIGGER_REQUEST".equals(e.getName()))
-        .findFirst();
+  private ApiTrigger buildApiTrigger(MockFlowEntity flow) {
+    Optional<FlowElement> apiTrigger = getFlowElement(flow, "API_TRIGGER_REQUEST");
 
-    Optional<FlowElement> condition = flow.getFlowElements().stream()
-        .filter(e -> "CONDITION".equals(e.getName()))
-        .findFirst();
-
-    return FlowMatchResult.builder()
-        .id(flow.getId())
-        .method(apiTrigger.map(e -> attr(e, "method")).orElse(null))
-        .path(apiTrigger.map(e -> attr(e, "path")).orElse(null))
-        .expression(condition.map(e -> attr(e, "expression")).orElse(null))
-        .build();
+    String method = apiTrigger.map(e -> attr(e, "method")).orElse(null);
+    String path = apiTrigger.map(e -> attr(e, "path")).orElse(null);
+    return new ApiTrigger(method, path);
   }
 
   private Optional<KafkaTrigger> buildKafkaTrigger(MockFlowEntity flow) {
-    return flow.getFlowElements().stream()
-        .filter(e -> "KAFKA_TRIGGER".equals(e.getName()))
-        .map(e -> new KafkaTrigger(attr(e, "broker"), attr(e, "topic")))
-        .findFirst();
+    Optional<FlowElement> apiTrigger = getFlowElement(flow, "KAFKA_TRIGGER");
+
+    return apiTrigger.map(e -> new KafkaTrigger(attr(e, "broker"), attr(e, "topic")));
   }
 
   //todo migrate to  elementService/getAttributeValue
@@ -154,6 +150,9 @@ public class MockFlowRepository {
 
   private String kafkaTriggerKey(String brokerUrl, String topic) {
     return String.format(KAFKA_TRIGGER_SEARCH_KEY, brokerUrl, topic);
+  }
+
+  private record ApiTrigger(String method, String path) {
   }
 
   private record KafkaTrigger(String brokerUrl, String topic) {

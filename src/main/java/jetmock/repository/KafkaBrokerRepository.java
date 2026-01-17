@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class KafkaBrokerRepository {
+
   private final RocksDbRepository commonRepository;
 
   private static final String BROKER_ID_KEY = "kafka-broker";

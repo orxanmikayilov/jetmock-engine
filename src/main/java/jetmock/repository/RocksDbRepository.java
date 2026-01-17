@@ -84,7 +84,6 @@ public class RocksDbRepository {
       for (iterator.seek(prefix.getBytes());
            iterator.isValid() && new String(iterator.key()).startsWith(prefix);
            iterator.next()) {
-
         results.add(objectMapper.readValue(iterator.value(), entityClass));
       }
     } catch (Exception e) {
@@ -120,18 +119,18 @@ public class RocksDbRepository {
     try (RocksIterator it = db.newIterator();
          WriteBatch batch = new WriteBatch();
          WriteOptions options = new WriteOptions()) {
-
       int deleted = 0;
 
       for (it.seek(prefixBytes);
            it.isValid() && new String(it.key()).startsWith(prefix);
            it.next()) {
-
         batch.delete(it.key());
         deleted++;
       }
 
-      if (deleted > 0) db.write(options, batch);
+      if (deleted > 0) {
+        db.write(options, batch);
+      }
       return deleted;
 
     } catch (Exception e) {

@@ -1,7 +1,7 @@
 package jetmock.controller;
 
-import lombok.RequiredArgsConstructor;
 import jetmock.service.DebugRocksService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;

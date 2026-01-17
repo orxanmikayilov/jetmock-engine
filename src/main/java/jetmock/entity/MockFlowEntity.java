@@ -1,7 +1,6 @@
 package jetmock.entity;
 
 import java.util.List;
-import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

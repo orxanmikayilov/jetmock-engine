@@ -2,31 +2,29 @@ package jetmock.service.kafka;
 
 import static jetmock.constant.Constant.CONDITION_BLACKLIST_REGEX;
 
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import jetmock.dto.payload.TriggerPayload;
+import jetmock.entity.FlowElement;
+import jetmock.entity.FlowMatchResult;
+import jetmock.entity.MockFlowEntity;
+import jetmock.exception.BaseException;
+import jetmock.repository.MockFlowRepository;
 import jetmock.service.AsyncFlowExecutor;
+import jetmock.service.DslObject;
+import jetmock.service.DslPropertyAccessor;
 import jetmock.service.ElementService;
+import jetmock.util.ParserUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import jetmock.entity.FlowElement;
-import jetmock.entity.FlowMatchResult;
-import jetmock.entity.MockFlowEntity;
-import jetmock.dto.payload.TriggerPayload;
-import jetmock.exception.BaseException;
-import jetmock.repository.MockFlowRepository;
-import jetmock.util.ParserUtil;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 
 @Slf4j
 @Service
@@ -93,27 +91,14 @@ public class KafkaTriggerService {
   private FlowMatchResult findMockFlow(String brokerId,
                                        String topic,
                                        TriggerPayload triggerPayload) {
-    List<MockFlowEntity> flows = mockFlowRepository.findByKafkaTrigger(brokerId, topic);
+    List<FlowMatchResult> candidates = mockFlowRepository.findByKafkaTrigger(brokerId, topic);
 
-    List<FlowMatchResult> candidates = flows.stream()
-        .map(this::mapToFlowMatchResult)
-        .collect(Collectors.toList());
-
-    if (CollectionUtils.isEmpty(candidates)) {
-      throw new BaseException(404, "MOCK_NOT_FOUND", "No matching mock flow found");
+    if (candidates.isEmpty()) {
+      throw new BaseException(404, "MOCK_NOT_FOUND", "Mock data not found");
     }
-
-    candidates.sort(Comparator.comparing(FlowMatchResult::getId));
 
     for (FlowMatchResult flow : candidates) {
       if (isConditionEligible(flow, triggerPayload)) {
-        log.info(
-            "Mock flow selected | flowId={} | condition={}",
-            flow.getId(),
-            (flow.getExpression() == null || flow.getExpression().isBlank())
-                ? "NO_CONDITION"
-                : flow.getExpression()
-        );
         return flow;
       }
     }
@@ -143,32 +128,32 @@ public class KafkaTriggerService {
         .build();
   }
 
-  private boolean isConditionEligible(FlowMatchResult flow,
-                                      TriggerPayload triggerPayload) {
+  private boolean isConditionEligible(FlowMatchResult flow, TriggerPayload triggerPayload) {
     String condition = flow.getExpression();
 
     if (condition == null || condition.isBlank()) {
+      log.info("condition is blank");
       return true;
     }
 
     if (isCodeInjectionAttack(condition)) {
-      log.warn("Potential code injection detected in condition: {}", condition);
+      log.warn("Code injection risk: {}", condition);
       return false;
     }
 
     try {
       StandardEvaluationContext context = new StandardEvaluationContext();
-      context.setVariable("trigger", triggerPayload);
+      context.setVariable("trigger", new DslObject(triggerPayload));
+      context.addPropertyAccessor(new DslPropertyAccessor());
 
       ExpressionParser parser = new SpelExpressionParser();
       Expression exp = parser.parseExpression(condition);
-
       return Boolean.TRUE.equals(exp.getValue(context, Boolean.class));
 
     } catch (Exception e) {
-      log.error("Condition evaluation failed | flowId={}", flow.getId(), e);
+      log.error("Condition evaluation failed. condition={}", condition, e);
+      return false;
     }
-    return false;
   }
 
   private boolean isCodeInjectionAttack(String condition) {

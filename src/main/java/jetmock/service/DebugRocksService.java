@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +71,7 @@ public class DebugRocksService {
           break;
         }
         scanned++;
-        keysToDelete.add(it.key()); // it.key() copy verir (RocksDB JNI), amma yenə də təhlükəsizdir
+        keysToDelete.add(it.key());
         it.next();
       }
     }
@@ -86,12 +85,7 @@ public class DebugRocksService {
         throw new IllegalStateException("Failed to delete key=" + key(k), e);
       }
     }
-
-    Map<String, Object> resp = new HashMap<>();
-    resp.put("prefix", prefix);
-    resp.put("scanned", scanned);
-    resp.put("deleted", deleted);
-    return resp;
+    return Map.of("prefix", prefix, "scanned", scanned, "deleted", deleted);
   }
 
   public JsonNode getByKey(String key) {

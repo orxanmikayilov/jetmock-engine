@@ -1,7 +1,7 @@
 package jetmock.service.kafka;
 
-import java.util.Set;
-import jetmock.entity.MockFlowEntity;
+import java.util.List;
+import jetmock.entity.FlowMatchResult;
 import jetmock.repository.MockFlowRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,24 +21,25 @@ public class KafkaTriggerStartupRunner {
   public void run() {
     log.info("Kafka trigger auto-start initialization started");
 
-    Set<MockFlowEntity> allFlows;
+    List<FlowMatchResult> allKafkaTriggers;
 
     try {
-      //todo use findKafkaTriggers instrad of find all
-      allFlows = null;
+      allKafkaTriggers = mockFlowRepository.findAllKafkaTrigger();
+
     } catch (Exception e) {
       log.error("Failed to load mock flows on startup", e);
       return;
     }
-
-//    for (MockFlowEntity flow : allFlows) {
-//      try {
-//        kafkaListenerLifecycleService.startIfExists(flow);
-//      } catch (Exception e) {
-//        log.error("Failed to auto-start kafka trigger for flowId={}", flow.getId(), e);
-//      }
-//    }
+    allKafkaTriggers.forEach(flowMatchResult ->
+        mockFlowRepository.findById(flowMatchResult.getId()).ifPresent(mockFlow -> {
+          try {
+            kafkaListenerLifecycleService.startIfExists(mockFlow);
+          } catch (Exception e) {
+            log.error("Failed to auto-start kafka trigger for flowId={}", mockFlow.getId(), e);
+          }
+        }));
 
     log.info("Kafka trigger auto-start initialization finished");
   }
+
 }
